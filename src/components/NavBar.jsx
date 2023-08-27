@@ -18,16 +18,16 @@ import BiotechIcon from "@mui/icons-material/Biotech";
 import LoginIcon from "@mui/icons-material/Login";
 
 import { useAuth0 } from "@auth0/auth0-react";
+import Cookie from "universal-cookie";
 
 const pages = ["Products", "Pricing", "Blog"];
 const settings = ["Login"];
 const settings2 = ["Account", "Dashboard", "Logout"];
 
-
-
 function NavBar() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
+  const [usuario, setUsuario] = useState({ nickA: "", picture: "" });
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
@@ -45,19 +45,50 @@ function NavBar() {
     useAuth0();
 
   const handleCloseUserMenu = (e) => {
+    e.preventDefault();
     setAnchorElUser(null);
-    console.log(e.target.id);
+    //console.log(e.target.id);
     if (e.target.id == "Login") {
       loginWithRedirect();
     }
     if (e.target.id == "Logout") {
-      logout();
+      setTimeout(() => {
+        eraseCookie();
+      }, 500);
     }
   };
 
+  const readCookie = () => {
+    const cookie = new Cookie();
+    const nickR = cookie.get("nick");
+    const pictureR = cookie.get("picture");
+    const userR = { nick: nickR, picture: pictureR };
+    //console.log(userR);
+    return userR;
+  };
+
+  const eraseCookie = () => {
+    const cookie = new Cookie();
+    cookie.remove("nick", { path: "/" });
+    cookie.remove("picture", { path: "/" });
+   // console.log("borrando...");
+    logout();
+  };
+
+  const saveCokkie = (nick, picture) => {
+    const cookie = new Cookie();
+    cookie.set("nick", nick, { path: "/" });
+    cookie.set("picture", picture, { path: "/" });
+  };
+
+  const cookie2 = new Cookie();
   const logueo = () => {
-    if (isAuthenticated) {
-      console.log(user);
+    if (isAuthenticated || readCookie().nick) {
+      if (!cookie2.get("nick")) {
+        saveCokkie(user.nickname, user.picture);
+        //console.log("generando koki");
+      }
+
       return settings2.map((setting) => (
         <MenuItem key={setting} onClick={handleCloseUserMenu}>
           <Typography id={setting} textAlign="center">
@@ -76,9 +107,11 @@ function NavBar() {
     }
   };
   const [flag, setFlag] = useState(false);
+
   useEffect(() => {
-    console.log(isAuthenticated);
+ 
   }, []);
+
 
   return (
     <AppBar position="static">
@@ -171,7 +204,8 @@ function NavBar() {
           </Box>
 
           <Box sx={{ flexGrow: 0 }}>
-            {isAuthenticated ? user.nickname : <></>}
+            {/* {isAuthenticated ? user.nickname : <></>} */}
+            {readCookie().nick ? readCookie().nick : <></>}
             <Tooltip title="Open settings">
               <IconButton
                 onClick={handleOpenUserMenu}
@@ -180,7 +214,8 @@ function NavBar() {
                 <Avatar
                   sx={{ backgroundColor: "green" }}
                   alt="Remy Sharp"
-                  src={user?.picture}
+                  /* src={user?.picture} */
+                  src={readCookie().picture ? readCookie().picture : readCookie().picture}
                 >
                   <LoginIcon />
                 </Avatar>
